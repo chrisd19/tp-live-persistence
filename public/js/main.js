@@ -9,11 +9,11 @@ $(function () {
         activity: $('#activity-list').children('ul')
     };
 
-    var collections = {
-        hotel: hotels,
-        restaurant: restaurants,
-        activity: activities
-    };
+    // var collections = {
+    //     hotel: hotels,
+    //     restaurant: restaurants,
+    //     activity: activities
+    // };
 
     var $itinerary = $('#itinerary');
 
@@ -23,7 +23,6 @@ $(function () {
     var $dayButtonList = $('.day-buttons');
 
     var days = [
-        []
     ];
 
     var currentDayNum = 1;
@@ -34,6 +33,14 @@ $(function () {
     --------------------------
      */
 
+    $.get('/api/days', function(result){
+        result.forEach(function(day){
+            days.push([]);
+            $dayButtonList.append(createDayButton(day.number));
+        })
+        $('.day-buttons button:nth-child(2)').addClass('current-day');
+    })
+
     $addItemButton.on('click', function () {
 
         var $this = $(this);
@@ -41,20 +48,24 @@ $(function () {
         var sectionName = $select.attr('data-type');
         var itemId = parseInt($select.val(), 10);
         var $list = $listGroups[sectionName];
-        var collection = collections[sectionName];
-        var item = findInCollection(collection, itemId);
 
-        var marker = drawMarker(map, sectionName, item.place.location);
+        var name = $select[0].selectedOptions[0].innerHTML;
+        // var collection = collections[sectionName];
+        // var item = findInCollection(collection, itemId);
 
-        $list.append(create$item(item));
+        $.post('/api/days/' + currentDayNum + '/' +sectionName + 's/add', {name: name}, function(name) {
+            item = {name: name}
+            // var marker = drawMarker(map, sectionName, item.place.location);
+            $list.append(create$item(item));
 
-        days[currentDayNum - 1].push({
-            item: item,
-            marker: marker,
-            type: sectionName
+            days[currentDayNum - 1].push({
+                item: item,
+                //marker: marker,
+                type: sectionName
+            });
+
+            //mapFit();
         });
-
-        mapFit();
 
     });
 
@@ -75,11 +86,17 @@ $(function () {
     });
 
     $addDayButton.on('click', function () {
-        var newDayNum = days.length + 1;
-        var $newDayButton = createDayButton(newDayNum);
-        days.push([]);
-        $addDayButton.before($newDayButton);
-        switchDay(newDayNum);
+        $.post('/api/days/add', function(newDay){
+            $newDayButton = createDayButton(newDay.number);
+            days.push([]);
+            $dayButtonList.append($newDayButton);
+            switchDay(newDay.number);
+        })
+        // var newDayNum = days.length + 1;
+        // var $newDayButton = createDayButton(newDayNum);
+        // days.push([]);
+        // $addDayButton.before($newDayButton);
+        // switchDay(newDayNum);
     });
 
     $dayButtonList.on('click', '.day-btn', function () {
@@ -88,22 +105,23 @@ $(function () {
     });
 
     $removeDayButton.on('click', function () {
+        $.post('/api/days/' + currentDayNum + '/delete', function() {
+            wipeDay();
+            days.splice(currentDayNum - 1, 1);
 
-        wipeDay();
-        days.splice(currentDayNum - 1, 1);
+            if (days.length === 0) {
+                days.push([]);
+            }
 
-        if (days.length === 0) {
-            days.push([]);
-        }
-
-        reRenderDayButtons();
-        switchDay(1);
+            reRenderDayButtons();
+            switchDay(1);
+        });
 
     });
 
-    fillInOptions(hotels, $('#hotel-choices'));
-    fillInOptions(restaurants, $('#restaurant-choices'));
-    fillInOptions(activities, $('#activity-choices'));
+    // fillInOptions(hotels, $('#hotel-choices'));
+    // fillInOptions(restaurants, $('#restaurant-choices'));
+    // fillInOptions(activities, $('#activity-choices'));
 
     /*
     --------------------------
@@ -146,12 +164,11 @@ $(function () {
     }
 
     function renderDay() {
-
         var currentDay = days[currentDayNum - 1];
 
         $dayButtonList
             .children('button')
-            .eq(currentDayNum - 1)
+            .eq(currentDayNum)
             .addClass('current-day');
 
         currentDay.forEach(function (attraction) {
@@ -185,7 +202,7 @@ $(function () {
         $dayButtonList.children('button').not($addDayButton).remove();
 
         for (var i = 0; i < numberOfDays; i++) {
-            $addDayButton.before(createDayButton(i + 1));
+            $dayButtonList.append(createDayButton(i + 1));
         }
 
     }
