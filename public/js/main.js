@@ -33,6 +33,8 @@ $(function () {
     --------------------------
      */
 
+    $.post('/api/days/add');
+
     $.get('/api/days', function(result){
         result.forEach(function(day){
             days.push([]);
@@ -105,17 +107,22 @@ $(function () {
     });
 
     $removeDayButton.on('click', function () {
-        $.post('/api/days/' + currentDayNum + '/delete', function() {
-            wipeDay();
-            days.splice(currentDayNum - 1, 1);
+        if (currentDayNum === 1) alert('Sorry, day one cannot be removed!');
+        else if (currentDayNum !== days.length) alert('Sorry, day must be removed from the end!');
+        else {
+            $.post('/api/days/' + currentDayNum + '/delete', function() {
+                wipeDay();
+                days.splice(currentDayNum - 1, 1);
 
-            if (days.length === 0) {
-                days.push([]);
-            }
+                if (days.length === 0) {
+                    days.push([]);
+                }
 
-            reRenderDayButtons();
-            switchDay(1);
-        });
+                reRenderDayButtons();
+                switchDay(currentDayNum-1);
+            });
+        }
+
 
     });
 
