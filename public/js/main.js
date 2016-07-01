@@ -33,15 +33,17 @@ $(function () {
     --------------------------
      */
 
-    $.post('/api/days/add');
-
-    $.get('/api/days', function(result){
-        result.forEach(function(day){
-            days.push([]);
-            $dayButtonList.append(createDayButton(day.number));
+    $.post('/api/days/add', function() {
+        $.get('/api/days', function(result){
+            result.forEach(function(day){
+                days.push([]);
+                $dayButtonList.append(createDayButton(day.number));
+            })
+            $('.day-buttons button:nth-child(2)').addClass('current-day');
         })
-        $('.day-buttons button:nth-child(2)').addClass('current-day');
-    })
+    });
+
+
 
     $addItemButton.on('click', function () {
 
